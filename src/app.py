@@ -1,8 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from tempfile import mkdtemp
 from yt_dlp import YoutubeDL
 from yt_dlp.postprocessor import PostProcessor
-from urllib.parse import urlparse, parse_qs
 import os
 import whisper
 import torch
@@ -15,7 +14,8 @@ torch.cuda.is_available()
 # Set your model name, device, and file path
 MODEL_NAME = "base"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_FILE_PATH = "whisper_base_model.pkl"
+MODEL_FILE_PATH = "data/whisper_base_model.pkl"
+
 
 class FilenameCollectorPP(PostProcessor):
     def __init__(self):
@@ -26,14 +26,17 @@ class FilenameCollectorPP(PostProcessor):
         self.filenames.append(information["filepath"])
         return [], information
 
+
 def save_model_to_disk(model, file_path):
     with open(file_path, "wb") as f:
         pickle.dump(model, f)
+
 
 def load_model_from_disk(file_path, device):
     with open(file_path, "rb") as f:
         model = pickle.load(f)
     return model.to(device)
+
 
 if os.path.exists(MODEL_FILE_PATH):
     # Load the model from the file
@@ -46,11 +49,16 @@ else:
     print("Saving the model to disk...")
     save_model_to_disk(model, MODEL_FILE_PATH)
 
-app = Flask(__name__)
+app = Flask(__name__,
+            static_folder="/app/static",
+            template_folder="/app/src/templates"
+            )
+
 
 def transcribe_audio(file_path):
     result = model.transcribe(file_path)
     return result["text"]
+
 
 def download_youtube_audio(url: str):
     destinationDirectory = mkdtemp()
@@ -76,6 +84,15 @@ def download_youtube_audio(url: str):
     result = filename_collector.filenames[0]
 
     return result
+
+
+@app.route("/", methods=["GET"])
+def home():
+
+    # Log user agent
+    print(request.headers.get("User-Agent"))
+
+    return render_template("index.html")
 
 
 @app.route("/transcribe", methods=["POST"])
@@ -107,6 +124,7 @@ def transcribe_youtube_audio():
         "response_time": response_time
     })
 
+
 def validate_youtube_url_or_id(youtube_url_or_id):
     youtube_id_pattern = r"(?:http(?:s)?://)?(?:www\.)?(?:(?:youtube.com/watch\?v=)|(?:youtu.be/))([a-zA-Z0-9_-]{11})|([a-zA-Z0-9_-]{11})"
     match = re.match(youtube_id_pattern, youtube_url_or_id)
@@ -121,4 +139,4 @@ def validate_youtube_url_or_id(youtube_url_or_id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=8080, debug=True)

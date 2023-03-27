@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>YouTube Transcription</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/static/css/main.css" rel="stylesheet" />
+    <script src="/static/js/vue.js"></script>
+  </head>
+  <body class="bg-gray-100">
+    <div id="app" class="container mx-auto px-4 py-16">
+      {% raw %}
+      <h1 class="text-3xl mb-8 font-bold">YouTube Transcription</h1>
+      <p class="mb-4">
+        Enter the YouTube URL or video ID below to transcribe the audio into
+        text.
+      </p>
+      <form @submit.prevent="submitForm">
+        <div class="mb-4">
+          <input
+            v-model="youtubeUrl"
+            type="text"
+            placeholder="YouTube URL or ID"
+            class="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+        <button
+          type="submit"
+          class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+          :disabled="isLoading"
+        >
+          Submit
+        </button>
+        <div v-if="isLoading" class="mt-4">Processing...</div>
+      </form>
+      <div v-if="transcription" class="mt-8">
+        <h2 class="text-2xl mb-4 font-bold">Transcription</h2>
+        <pre class="bg-gray-200 p-4 rounded whitespace-pre-wrap">
+{{ transcription }}</pre
+        >
+      </div>
+      <div v-if="error" class="mt-4 text-red-500">{{ error }}</div>
+      {% endraw %}
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+
+      const app = createApp({
+        data() {
+          return {
+            youtubeUrl: "",
+            isLoading: false,
+            transcription: null,
+            error: null,
+          };
+        },
+        methods: {
+          async submitForm() {
+            this.isLoading = true;
+            this.transcription = null;
+            this.error = null;
+
+            try {
+              const response = await fetch("/transcribe", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({
+                  youtube_url_or_id: this.youtubeUrl,
+                }),
+              });
+
+              const data = await response.json();
+              if (response.ok) {
+                this.transcription = data.text;
+              } else {
+                this.error = data.error;
+              }
+            } catch (error) {
+              this.error = "An error occurred while processing your request.";
+            } finally {
+              this.isLoading = false;
+            }
+          },
+        },
+      });
+
+      app.mount("#app");
+    </script>
+  </body>
+</html>

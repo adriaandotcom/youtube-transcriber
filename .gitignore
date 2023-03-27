@@ -1,0 +1,6 @@
+node_modules
+static
+
+# Ignore data, but keep data/.gitkeep
+data/*
+!data/.gitkeep
