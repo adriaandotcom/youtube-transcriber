@@ -133,7 +133,7 @@ def transcribe_youtube_audio():
 
 
 def validate_youtube_url_or_id(youtube_url_or_id):
-    youtube_id_pattern = r"(?:http(?:s)?://)?(?:www\.)?(?:(?:youtube.com/watch\?v=)|(?:youtu.be/))([a-zA-Z0-9_-]{11})|([a-zA-Z0-9_-]{11})"
+    youtube_id_pattern = r"(?:http(?:s)?://)?(?:www\.)?(?:m\.)?(?:(?:youtube.com/watch\?.*v=)|(?:youtu.be/))([a-zA-Z0-9_-]{11})|([a-zA-Z0-9_-]{11})"
     match = re.match(youtube_id_pattern, youtube_url_or_id)
 
     if match:
