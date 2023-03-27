@@ -14,7 +14,7 @@ DEFAULT_MODEL_NAME = "tiny"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 AVAILABLE_MODELS = ["tiny", "base", "small", "medium", "large"]
 
-MODEL_FILE_PATH = "/app/data/whisper_{}_model.pkl"
+MODEL_FILE_PATH = "/data/whisper_{}_model.pkl"
 
 
 def validate_model(model_name):
@@ -63,6 +63,9 @@ app = Flask(__name__,
             )
 
 
+application = app
+
+
 def download_youtube_audio(url: str):
     destinationDirectory = mkdtemp()
 
@@ -91,10 +94,6 @@ def download_youtube_audio(url: str):
 
 @app.route("/", methods=["GET"])
 def home():
-
-    # Log user agent
-    print(request.headers.get("User-Agent"))
-
     return render_template("index.html")
 
 
@@ -144,7 +143,3 @@ def validate_youtube_url_or_id(youtube_url_or_id):
             return match.group(2)
     else:
         return None
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)

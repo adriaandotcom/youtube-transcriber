@@ -1,0 +1,24 @@
+# Define the service
+service:
+  # Name of the service
+  name: youtube-transcriber
+
+  ports:
+    - :container: 8080
+      :http: 80
+      :https: 443
+
+  volumes:
+    - "/var/www/youtube-transcriber:/data:rw"
+
+  traffic_matches:
+    - youtube-transcriber.adriaanvanrossum.nl
+
+  # Annotations for the service
+  annotations:
+    cloud66.com/application-name: my-application
+
+  # Tags for the service
+  tags:
+    - web
+    - production
