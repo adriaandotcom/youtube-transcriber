@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx tailwindcss -i src/css/main.css -o static/css/main.css"
+    "build": "npx tailwindcss -i src/css/main.css -o static/css/main.css",
+    "dev": "docker compose build && docker compose up"
   },
   "repository": {
     "type": "git",
