@@ -9,12 +9,31 @@ import pickle
 import re
 import time
 
-torch.cuda.is_available()
-
 # Set your model name, device, and file path
-MODEL_NAME = "base"
+DEFAULT_MODEL_NAME = "tiny"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_FILE_PATH = "data/whisper_base_model.pkl"
+AVAILABLE_MODELS = ["tiny", "base", "small", "medium", "large"]
+
+MODEL_FILE_PATH = "/app/data/whisper_{}_model.pkl"
+
+
+def validate_model(model_name):
+    if model_name not in AVAILABLE_MODELS:
+        return DEFAULT_MODEL_NAME
+    return model_name
+
+
+def load_model(model_name, device):
+    model_file_path = MODEL_FILE_PATH.format(model_name)
+    if os.path.exists(model_file_path):
+        print(f"Loading the {model_name} model from disk...")
+        model = load_model_from_disk(model_file_path, DEVICE)
+    else:
+        print(f"Downloading the {model_name} model...")
+        model = whisper.load_model(model_name, device=DEVICE)
+        print(f"Saving the {model_name} model to disk...")
+        save_model_to_disk(model, model_file_path)
+    return model
 
 
 class FilenameCollectorPP(PostProcessor):
@@ -38,26 +57,10 @@ def load_model_from_disk(file_path, device):
     return model.to(device)
 
 
-if os.path.exists(MODEL_FILE_PATH):
-    # Load the model from the file
-    print("Loading the model from disk...")
-    model = load_model_from_disk(MODEL_FILE_PATH, DEVICE)
-else:
-    # Download the model, save it to disk, and load it
-    print("Downloading the model...")
-    model = whisper.load_model(MODEL_NAME, device=DEVICE)
-    print("Saving the model to disk...")
-    save_model_to_disk(model, MODEL_FILE_PATH)
-
 app = Flask(__name__,
             static_folder="/app/static",
             template_folder="/app/src/templates"
             )
-
-
-def transcribe_audio(file_path):
-    result = model.transcribe(file_path)
-    return result["text"]
 
 
 def download_youtube_audio(url: str):
@@ -100,19 +103,23 @@ def transcribe_youtube_audio():
     start_time = time.time()
 
     youtube_url_or_id = request.form.get("youtube_url_or_id")
+    model_name = request.form.get("model")
 
     if not youtube_url_or_id:
         return jsonify({"error": "YouTube URL or ID is required"}), 400
 
     youtube_id = validate_youtube_url_or_id(youtube_url_or_id)
+    model_name = validate_model(model_name)
 
     if not youtube_id:
         return jsonify({"error": "Invalid YouTube URL or ID"}), 400
 
     youtube_url = f"https://www.youtube.com/watch?v={youtube_id}"
+    model = load_model(model_name, DEVICE)
 
     file = download_youtube_audio(youtube_url)
-    transcription_result = transcribe_audio(file)
+    result = model.transcribe(file)
+    transcription_result = result["text"]
 
     end_time = time.time()
     response_time = round(end_time - start_time, 2)
@@ -121,7 +128,8 @@ def transcribe_youtube_audio():
         "text": transcription_result,
         "youtube_id": youtube_id,
         "youtube_url": youtube_url,
-        "response_time": response_time
+        "response_time": response_time,
+        "model": model_name
     })
 
 

@@ -24,6 +24,18 @@
             class="w-full p-2 border border-gray-300 rounded"
           />
         </div>
+        <div class="mb-4">
+          <label for="model" class="block mb-2">Model:</label>
+          <select
+            v-model="selectedModel"
+            id="model"
+            class="w-full p-2 border border-gray-300 rounded"
+          >
+            <option v-for="model in models" :key="model.id" :value="model.id">
+              {{ model.name }} - {{ model.relativeSpeed }}
+            </option>
+          </select>
+        </div>
         <button
           type="submit"
           class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
@@ -53,6 +65,14 @@
             isLoading: false,
             transcription: null,
             error: null,
+            selectedModel: "base",
+            models: [
+              { id: "tiny", name: "tiny", relativeSpeed: "~32x" },
+              { id: "base", name: "base", relativeSpeed: "~16x" },
+              { id: "small", name: "small", relativeSpeed: "~6x" },
+              { id: "medium", name: "medium", relativeSpeed: "~2x" },
+              { id: "large", name: "large", relativeSpeed: "1x" },
+            ],
           };
         },
         methods: {
@@ -69,6 +89,7 @@
                 },
                 body: new URLSearchParams({
                   youtube_url_or_id: this.youtubeUrl,
+                  model: this.selectedModel,
                 }),
               });
 
